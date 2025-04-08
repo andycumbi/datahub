@@ -51,11 +51,11 @@ data-lake/
 │   ├── source2/
 │   └── source3/
 ├── silver/
+│   ├── tran2/
+│   └── tran1/
+├── gold/
 │   ├── dim/
 │   └── fact/
-├── gold/
-│   ├── reports/
-│   └── analytics/
 
 ```
 
