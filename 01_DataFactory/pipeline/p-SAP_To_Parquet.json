@@ -1,0 +1,436 @@
+{
+	"name": "p-SAP_To_Parquet",
+	"properties": {
+		"activities": [
+			{
+				"name": "ExtractParams",
+				"type": "Lookup",
+				"dependsOn": [],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "AzureDatabricksDeltaLakeSource",
+						"query": {
+							"value": "@concat('SELECT * FROM ' ,pipeline().parameters.CatalogName, '.',pipeline().parameters.SchemaName, '.',pipeline().parameters.TableName,  ' WHERE ExtractionSourceName=''SAPtoParquet'' ')",
+							"type": "Expression"
+						}
+					},
+					"dataset": {
+						"referenceName": "DS_DeltaLake",
+						"type": "DatasetReference",
+						"parameters": {
+							"DeltaLakeDatabase": {
+								"value": "@pipeline().parameters.SchemaName",
+								"type": "Expression"
+							},
+							"DeltaLakeTable": {
+								"value": "@pipeline().parameters.TableName",
+								"type": "Expression"
+							}
+						}
+					},
+					"firstRowOnly": false
+				}
+			},
+			{
+				"name": "ForEach1",
+				"type": "ForEach",
+				"dependsOn": [
+					{
+						"activity": "ExtractParams",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"items": {
+						"value": "@activity('ExtractParams').output.value",
+						"type": "Expression"
+					},
+					"isSequential": true,
+					"activities": [
+						{
+							"name": "Extract Raw Data",
+							"type": "Copy",
+							"dependsOn": [],
+							"policy": {
+								"timeout": "0.12:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"source": {
+									"type": "SapTableSource",
+									"rfcTableOptions": {
+										"value": "@{item().RequestBody}",
+										"type": "Expression"
+									},
+									"partitionOption": "None"
+								},
+								"sink": {
+									"type": "ParquetSink",
+									"storeSettings": {
+										"type": "AzureBlobFSWriteSettings"
+									},
+									"formatSettings": {
+										"type": "ParquetWriteSettings"
+									}
+								},
+								"enableStaging": false,
+								"translator": {
+									"type": "TabularTranslator",
+									"typeConversion": true,
+									"typeConversionSettings": {
+										"allowDataTruncation": true,
+										"treatBooleanAsNumber": false
+									}
+								}
+							},
+							"inputs": [
+								{
+									"referenceName": "DS_SAP_Table",
+									"type": "DatasetReference",
+									"parameters": {
+										"SAPTable": {
+											"value": "@item().Table",
+											"type": "Expression"
+										}
+									}
+								}
+							],
+							"outputs": [
+								{
+									"referenceName": "DS_Parquet",
+									"type": "DatasetReference",
+									"parameters": {
+										"Container": {
+											"value": "@item().Container",
+											"type": "Expression"
+										},
+										"Folder": {
+											"value": "@item().Folder",
+											"type": "Expression"
+										},
+										"FileName": {
+											"value": "@item().FileName",
+											"type": "Expression"
+										}
+									}
+								}
+							]
+						},
+						{
+							"name": "Execute_ODS",
+							"type": "DatabricksNotebook",
+							"dependsOn": [
+								{
+									"activity": "Log_Ok",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"policy": {
+								"timeout": "0.12:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"notebookPath": {
+									"value": "@item().Notebook_ODS",
+									"type": "Expression"
+								}
+							},
+							"linkedServiceName": {
+								"referenceName": "LS_Databricks",
+								"type": "LinkedServiceReference"
+							}
+						},
+						{
+							"name": "Move to Historical",
+							"type": "Copy",
+							"dependsOn": [
+								{
+									"activity": "Execute_ODS",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"policy": {
+								"timeout": "0.12:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"source": {
+									"type": "ParquetSource",
+									"storeSettings": {
+										"type": "AzureBlobFSReadSettings",
+										"recursive": true,
+										"enablePartitionDiscovery": false
+									},
+									"formatSettings": {
+										"type": "ParquetReadSettings"
+									}
+								},
+								"sink": {
+									"type": "ParquetSink",
+									"storeSettings": {
+										"type": "AzureBlobFSWriteSettings"
+									},
+									"formatSettings": {
+										"type": "ParquetWriteSettings"
+									}
+								},
+								"enableStaging": false,
+								"translator": {
+									"type": "TabularTranslator",
+									"typeConversion": true,
+									"typeConversionSettings": {
+										"allowDataTruncation": true,
+										"treatBooleanAsNumber": false
+									}
+								}
+							},
+							"inputs": [
+								{
+									"referenceName": "DS_Parquet",
+									"type": "DatasetReference",
+									"parameters": {
+										"Container": {
+											"value": "@item().Container",
+											"type": "Expression"
+										},
+										"Folder": {
+											"value": "@item().Folder",
+											"type": "Expression"
+										},
+										"FileName": {
+											"value": "@item().FileName",
+											"type": "Expression"
+										}
+									}
+								}
+							],
+							"outputs": [
+								{
+									"referenceName": "DS_Parquet",
+									"type": "DatasetReference",
+									"parameters": {
+										"Container": {
+											"value": "@item().Container",
+											"type": "Expression"
+										},
+										"Folder": {
+											"value": "@item().HistoricalFolder",
+											"type": "Expression"
+										},
+										"FileName": {
+											"value": "@item().FileName",
+											"type": "Expression"
+										}
+									}
+								}
+							]
+						},
+						{
+							"name": "Delete1",
+							"type": "Delete",
+							"dependsOn": [
+								{
+									"activity": "Move to Historical",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"policy": {
+								"timeout": "0.12:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"dataset": {
+									"referenceName": "DS_Parquet",
+									"type": "DatasetReference",
+									"parameters": {
+										"Container": {
+											"value": "@item().Container",
+											"type": "Expression"
+										},
+										"Folder": {
+											"value": "@item().Folder",
+											"type": "Expression"
+										},
+										"FileName": {
+											"value": "@item().FileName",
+											"type": "Expression"
+										}
+									}
+								},
+								"enableLogging": false,
+								"storeSettings": {
+									"type": "AzureBlobFSReadSettings",
+									"recursive": true,
+									"enablePartitionDiscovery": false
+								}
+							}
+						},
+						{
+							"name": "Log_Error",
+							"type": "DatabricksNotebook",
+							"dependsOn": [
+								{
+									"activity": "Extract Raw Data",
+									"dependencyConditions": [
+										"Failed"
+									]
+								}
+							],
+							"policy": {
+								"timeout": "0.12:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"notebookPath": {
+									"value": "@item().Notebook_Log",
+									"type": "Expression"
+								},
+								"baseParameters": {
+									"ExtractionConfigId": {
+										"value": "@item().ExtractionConfigId",
+										"type": "Expression"
+									},
+									"PipelineType": {
+										"value": "@item().ExtractionSourceName",
+										"type": "Expression"
+									},
+									"Fecha": {
+										"value": "@item().FechaSalida",
+										"type": "Expression"
+									},
+									"Error": {
+										"value": "@{activity('Extract Raw Data').Status}",
+										"type": "Expression"
+									},
+									"FileName": {
+										"value": "@item().FileName",
+										"type": "Expression"
+									},
+									"errorMsg": {
+										"value": "@{activity('Extract Raw Data').Error.Message}",
+										"type": "Expression"
+									}
+								}
+							},
+							"linkedServiceName": {
+								"referenceName": "LS_Databricks",
+								"type": "LinkedServiceReference"
+							}
+						},
+						{
+							"name": "Log_Ok",
+							"type": "DatabricksNotebook",
+							"dependsOn": [
+								{
+									"activity": "Extract Raw Data",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"policy": {
+								"timeout": "0.12:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"notebookPath": {
+									"value": "@item().Notebook_Log",
+									"type": "Expression"
+								},
+								"baseParameters": {
+									"ExtractionConfigId": {
+										"value": "@item().ExtractionConfigId",
+										"type": "Expression"
+									},
+									"PipelineType": {
+										"value": "@item().ExtractionSourceName",
+										"type": "Expression"
+									},
+									"Fecha": {
+										"value": "@item().FechaSalida",
+										"type": "Expression"
+									},
+									"Error": {
+										"value": "@{activity('Extract Raw Data').Status}",
+										"type": "Expression"
+									},
+									"FileName": {
+										"value": "@item().FileName",
+										"type": "Expression"
+									},
+									"errorMsg": {
+										"value": "0",
+										"type": "Expression"
+									}
+								}
+							},
+							"linkedServiceName": {
+								"referenceName": "LS_Databricks",
+								"type": "LinkedServiceReference"
+							}
+						}
+					]
+				}
+			}
+		],
+		"parameters": {
+			"SchemaName": {
+				"type": "string",
+				"defaultValue": "Config_raw"
+			},
+			"TableName": {
+				"type": "string",
+				"defaultValue": "Config_table "
+			},
+			"CatalogName": {
+				"type": "string",
+				"defaultValue": "`ctl-fonce-dev`"
+			}
+		},
+		"folder": {
+			"name": "01- Bronze/SAP"
+		},
+		"annotations": []
+	}
+}

@@ -1,0 +1,31 @@
+{
+	"name": "Load_Config",
+	"properties": {
+		"activities": [
+			{
+				"name": "Load_Configs",
+				"type": "DatabricksNotebook",
+				"dependsOn": [],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"notebookPath": "/datahub/00_Databricks.."
+				},
+				"linkedServiceName": {
+					"referenceName": "LS_Databricks",
+					"type": "LinkedServiceReference"
+				}
+			}
+		],
+		"folder": {
+			"name": "01- Bronze"
+		},
+		"annotations": []
+	}
+}

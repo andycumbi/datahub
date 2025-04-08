@@ -1,0 +1,16 @@
+{
+	"name": "LS_AzureDatabricksDeltaLake",
+	"properties": {
+		"annotations": [],
+		"type": "AzureDatabricksDeltaLake",
+		"typeProperties": {
+			"domain": "https://adb-3279231528392592.12.azuredatabricks.net",
+			"clusterId": "0531-091047-w4u3gchp",
+			"workspaceResourceId": "/subscriptions/f4b9258a-01d0-42f5-889b-09de0127339d/resourceGroups/foncedata-dev/providers/Microsoft.Databricks/workspaces/foncedata-databricks-dev"
+		},
+		"connectVia": {
+			"referenceName": "IntegrationRuntimePrivate",
+			"type": "IntegrationRuntimeReference"
+		}
+	}
+}

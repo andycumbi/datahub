@@ -1,0 +1,26 @@
+{
+	"name": "DS_SAP_Table",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "LS_SAP_Table",
+			"type": "LinkedServiceReference"
+		},
+		"parameters": {
+			"SAPTable": {
+				"type": "string"
+			}
+		},
+		"folder": {
+			"name": "SAP"
+		},
+		"annotations": [],
+		"type": "SapTableResource",
+		"schema": [],
+		"typeProperties": {
+			"tableName": {
+				"value": "@dataset().SAPTable",
+				"type": "Expression"
+			}
+		}
+	}
+}

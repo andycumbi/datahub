@@ -1,0 +1,15 @@
+{
+	"name": "datafactory-WorkspaceDefaultStorage",
+	"type": "Microsoft.DataFactory/factories/linkedservices",
+	"properties": {
+		"typeProperties": {
+			"url": ""
+		},
+		"type": "AzureBlobFS",
+		"connectVia": {
+			"referenceName": "AutoResolveIntegrationRuntime",
+			"type": "IntegrationRuntimeReference"
+		},
+		"annotations": []
+	}
+}

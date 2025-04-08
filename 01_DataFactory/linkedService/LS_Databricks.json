@@ -1,0 +1,17 @@
+{
+	"name": "LS_Databricks",
+	"properties": {
+		"annotations": [],
+		"type": "AzureDatabricks",
+		"typeProperties": {
+			"domain": "",
+			"authentication": "MSI",
+			"workspaceResourceId": "",
+			"existingClusterId": ""
+		},
+		"connectVia": {
+			"referenceName": "",
+			"type": "IntegrationRuntimeReference"
+		}
+	}
+}

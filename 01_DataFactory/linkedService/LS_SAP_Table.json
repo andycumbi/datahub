@@ -1,0 +1,26 @@
+{
+	"name": "LS_SAP_Table",
+	"properties": {
+		"annotations": [],
+		"type": "SapTable",
+		"typeProperties": {
+			"clientId": "100",
+			"sncMode": false,
+			"userName": "USR_AZURE",
+			"password": {
+				"type": "AzureKeyVaultSecret",
+				"store": {
+					"referenceName": "LS_AzureKeyVault",
+					"type": "LinkedServiceReference"
+				},
+				"secretName": "SAPPassword"
+			},
+			"server": "10.254.3.214",
+			"systemNumber": "00"
+		},
+		"connectVia": {
+			"referenceName": "IntegrationRuntimePrivate",
+			"type": "IntegrationRuntimeReference"
+		}
+	}
+}

@@ -1,0 +1,221 @@
+{
+	"name": "p-SAP_bronze_to_silver",
+	"properties": {
+		"activities": [
+			{
+				"name": "ExtractParams",
+				"type": "Lookup",
+				"dependsOn": [],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "AzureDatabricksDeltaLakeSource",
+						"query": {
+							"value": "@concat('SELECT * FROM ',pipeline().parameters.CatalogName, '.',pipeline().parameters.SchemaName, '.',pipeline().parameters.TableName)",
+							"type": "Expression"
+						}
+					},
+					"dataset": {
+						"referenceName": "DS_DeltaLake",
+						"type": "DatasetReference",
+						"parameters": {
+							"DeltaLakeDatabase": {
+								"value": "@pipeline().parameters.SchemaName",
+								"type": "Expression"
+							},
+							"DeltaLakeTable": {
+								"value": "@pipeline().parameters.TableName",
+								"type": "Expression"
+							}
+						}
+					},
+					"firstRowOnly": false
+				}
+			},
+			{
+				"name": "ForEach1",
+				"type": "ForEach",
+				"dependsOn": [
+					{
+						"activity": "ExtractParams",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"items": {
+						"value": "@activity('ExtractParams').output.value",
+						"type": "Expression"
+					},
+					"isSequential": true,
+					"activities": [
+						{
+							"name": "Execute_Cleansed",
+							"type": "DatabricksNotebook",
+							"dependsOn": [],
+							"policy": {
+								"timeout": "0.12:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"notebookPath": {
+									"value": "@item().Notebook_cleansed",
+									"type": "Expression"
+								}
+							},
+							"linkedServiceName": {
+								"referenceName": "LS_Databricks",
+								"type": "LinkedServiceReference"
+							}
+						},
+						{
+							"name": "Log_Cleansed_Ok",
+							"type": "DatabricksNotebook",
+							"dependsOn": [
+								{
+									"activity": "Execute_Cleansed",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"policy": {
+								"timeout": "0.12:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"notebookPath": {
+									"value": "@item().Notebook_Log",
+									"type": "Expression"
+								},
+								"baseParameters": {
+									"ExtractionConfigId": {
+										"value": "@item().Id",
+										"type": "Expression"
+									},
+									"Notebook_path": {
+										"value": "@item().Notebook_cleansed",
+										"type": "Expression"
+									},
+									"error": {
+										"value": "@{activity('Execute_Cleansed').Status}",
+										"type": "Expression"
+									},
+									"errorMsg": {
+										"value": "0",
+										"type": "Expression"
+									},
+									"Name": {
+										"value": "@item().Name",
+										"type": "Expression"
+									},
+									"Pipeline_raw": {
+										"value": "@item().Pipeline_raw",
+										"type": "Expression"
+									},
+									"Stage": "Cleansed"
+								}
+							},
+							"linkedServiceName": {
+								"referenceName": "LS_Databricks",
+								"type": "LinkedServiceReference"
+							}
+						},
+						{
+							"name": "Log_Cleansed_Error",
+							"type": "DatabricksNotebook",
+							"dependsOn": [
+								{
+									"activity": "Execute_Cleansed",
+									"dependencyConditions": [
+										"Failed"
+									]
+								}
+							],
+							"policy": {
+								"timeout": "0.12:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"notebookPath": {
+									"value": "@item().Notebook_Log",
+									"type": "Expression"
+								},
+								"baseParameters": {
+									"ExtractionConfigId": {
+										"value": "@item().Id",
+										"type": "Expression"
+									},
+									"Notebook_path": {
+										"value": "@item().Notebook_cleansed",
+										"type": "Expression"
+									},
+									"error": {
+										"value": "@{activity('Execute_Cleansed').Status}",
+										"type": "Expression"
+									},
+									"errorMsg": {
+										"value": "@{activity('Execute_Cleansed').Error.Message}",
+										"type": "Expression"
+									},
+									"Name": {
+										"value": "@item().Name",
+										"type": "Expression"
+									},
+									"Pipeline_raw": {
+										"value": "@item().Pipeline_raw",
+										"type": "Expression"
+									},
+									"Stage": "Cleansed"
+								}
+							},
+							"linkedServiceName": {
+								"referenceName": "LS_Databricks",
+								"type": "LinkedServiceReference"
+							}
+						}
+					]
+				}
+			}
+		],
+		"parameters": {
+			"SchemaName": {
+				"type": "string",
+				"defaultValue": "config_foncepersonas"
+			},
+			"TableName": {
+				"type": "string",
+				"defaultValue": "notebook_table"
+			},
+			"CatalogName": {
+				"type": "string",
+				"defaultValue": "`ctl-fonce-dev`"
+			}
+		},
+		"folder": {
+			"name": "03 - Silver"
+		},
+		"annotations": []
+	}
+}
