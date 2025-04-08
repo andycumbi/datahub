@@ -79,14 +79,6 @@ data-lake/
 4. Build pipelines that call Databricks notebooks
 5. Set up monitoring and alerts
 
-## Execution Flow
-1. Data Factory trigger initiates the pipeline
-2. Source data is identified via datasets
-3. Databricks notebook activity is called with parameters
-4. Databricks executes the transformation logic
-5. Processed data is written back to the data lake
-6. Subsequent activities in the pipeline are triggered
-7. Monitoring and logging track execution status
 
 ## Monitoring and Logging
 - Pipeline runs are logged in Data Factory monitoring
@@ -94,27 +86,8 @@ data-lake/
 - Alert mechanisms are configured for pipeline failures
 - Activity run history is maintained for auditing
 
-## Security Considerations
-- All credentials are stored in Azure Key Vault
-- RBAC is implemented for access control
-- Data encryption is enabled at rest and in transit
-- Network security groups restrict access to resources
-
-## Best Practices
-- Parameterize notebooks for reusability
-- Use Delta Lake for ACID transactions
-- Implement error handling and retry logic
-- Maintain separate development and production environments
-- Version control all code and configuration
-
-## Troubleshooting
-- Check Data Factory activity logs for pipeline failures
-- Review Databricks cluster logs for execution errors
-- Verify linked service connections if integration fails
-- Ensure proper permissions are set for all resources
 
 ## Future Enhancements
 - Implement CI/CD for automated deployment
 - Add unit and integration testing
-- Enhance monitoring with custom dashboards
 - Optimize performance with fine-tuned configurations
